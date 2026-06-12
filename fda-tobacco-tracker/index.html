@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FDA Tobacco Product Directory Tracker</title>
+  <style>
+    :root {
+      --primary: #1a3a5c;
+      --primary-light: #2563a8;
+      --accent: #e74c3c;
+      --new-green: #16a34a;
+      --new-bg: #f0fdf4;
+      --new-purple: #7c3aed;
+      --bg: #f1f5f9;
+      --surface: #fff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, #1e4d8c 100%);
+      color: white;
+      padding: 20px 24px 16px;
+    }
+    .header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+    .header p  { font-size: 13px; opacity: 0.8; margin-top: 3px; }
+    .header-meta { font-size: 11px; opacity: 0.65; margin-top: 8px; }
+    .fda-link { color: rgba(255,255,255,0.75); font-size: 12px; text-decoration: none; white-space: nowrap; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; padding: 4px 10px; }
+    .fda-link:hover { background: rgba(255,255,255,0.15); }
+
+    /* ── New-visit banner ── */
+    .visit-banner {
+      background: var(--new-purple);
+      color: white;
+      padding: 9px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+    .visit-banner .banner-text { flex: 1; }
+    .visit-banner button {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .visit-banner button:hover { background: rgba(255,255,255,0.3); }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      background: var(--primary-light);
+      color: white;
+      padding: 10px 24px;
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+    }
+    .stat { display: flex; flex-direction: column; }
+    .stat-value { font-size: 18px; font-weight: 700; }
+    .stat-label { font-size: 10px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 1px; }
+
+    /* ── Main layout ── */
+    .main { max-width: 1440px; margin: 0 auto; padding: 18px 24px 40px; }
+
+    /* ── Filter card ── */
+    .filter-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+    .filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+    .fg { display: flex; flex-direction: column; gap: 4px; }
+    .fg.grow { flex: 1; min-width: 200px; }
+    .fg label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+    }
+    .fg input, .fg select {
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+      background: white;
+      color: var(--text);
+      outline: none;
+      min-width: 0;
+    }
+    .fg input:focus, .fg select:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(37,99,168,0.12);
+    }
+    .btn-reset {
+      height: 34px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .btn-reset:hover { border-color: #999; color: var(--text); }
+
+    /* ── New-products filter ── */
+    .new-filter-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .new-filter-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip {
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: white;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.12s;
+    }
+    .chip:hover { border-color: var(--primary-light); color: var(--primary-light); }
+    .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .chip.active.green { background: var(--new-green); border-color: var(--new-green); }
+    .chip.active.purple { background: var(--new-purple); border-color: var(--new-purple); }
+
+    /* ── Table card ── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .table-toolbar {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .table-count { font-size: 13px; color: var(--text-muted); }
+    .table-count strong { color: var(--text); }
+    .btn-export {
+      padding: 5px 12px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-export:hover { background: var(--primary-light); }
+
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      background: #f8fafc;
+      padding: 9px 11px;
+      text-align: left;
+      font-weight: 700;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    thead th:hover { background: #f0f4f8; color: var(--primary-light); }
+    thead th.sort-asc::after  { content: ' ▲'; font-size: 9px; }
+    thead th.sort-desc::after { content: ' ▼'; font-size: 9px; }
+
+    tbody tr { border-bottom: 1px solid #f1f5f9; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr.row-new { background: var(--new-bg); }
+    tbody tr.row-new:hover { background: #dcfce7; }
+    tbody tr.row-visit { background: #f5f3ff; }
+    tbody tr.row-visit:hover { background: #ede9fe; }
+
+    td { padding: 7px 11px; vertical-align: middle; }
+    td.td-name { max-width: 240px; white-space: normal; word-break: break-word; line-height: 1.4; }
+    td.td-company { max-width: 180px; white-space: normal; word-break: break-word; line-height: 1.4; }
+    td.td-nowrap { white-space: nowrap; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+    .badge-new     { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .badge-visit   { background: #ede9fe; color: #6d28d9; border: 1px solid #c4b5fd; }
+    .badge-cat     { background: #eff6ff; color: #1d4ed8; }
+    .badge-type    { background: #fefce8; color: #a16207; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
+
+    /* ── Doc links ── */
+    .doc-links { display: flex; gap: 4px; flex-wrap: wrap; }
+    .doc-link {
+      display: inline-block;
+      padding: 2px 7px;
+      background: #e0f2fe;
+      color: #0369a1;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .doc-link:hover { background: #bae6fd; }
+
+    .stn { font-family: 'SF Mono', 'Consolas', 'Courier New', monospace; font-size: 11px; color: var(--text-muted); }
+
+    /* ── Pagination ── */
+    .pagination {
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .pg-info { font-size: 12px; color: var(--text-muted); }
+    .pg-btns { display: flex; gap: 3px; }
+    .pg-btn {
+      padding: 4px 9px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 5px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text);
+      min-width: 32px;
+      text-align: center;
+    }
+    .pg-btn:hover:not(:disabled) { border-color: var(--primary-light); color: var(--primary-light); }
+    .pg-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .pg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ── State messages ── */
+    .state-msg { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+    .state-icon { font-size: 40px; margin-bottom: 12px; }
+    .state-msg h3 { font-size: 16px; color: var(--text); margin-bottom: 8px; }
+    .state-msg p  { font-size: 13px; line-height: 1.6; }
+    .state-msg code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+    .spinner {
+      display: inline-block; width: 30px; height: 30px;
+      border: 3px solid #e2e8f0; border-top-color: var(--primary-light);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────── -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>FDA Tobacco Product Directory Tracker</h1>
+      <p>Search and monitor authorized tobacco products — updated daily from the FDA database</p>
+    </div>
+    <a class="fda-link" href="https://www.accessdata.fda.gov/scripts/searchtobacco/" target="_blank">↗ FDA Source</a>
+  </div>
+  <div class="header-meta" id="data-meta">Loading…</div>
+</div>
+
+<!-- ── New-visit banner ────────────────────────────────── -->
+<div id="visit-banner" class="visit-banner" style="display:none">
+  <span class="banner-text" id="visit-banner-text"></span>
+  <button id="visit-filter-btn" onclick="activateVisitFilter()">Show only new products</button>
+  <button onclick="document.getElementById('visit-banner').style.display='none'">✕</button>
+</div>
+
+<!-- ── Stats bar ──────────────────────────────────────── -->
+<div class="stats-bar">
+  <div class="stat"><span class="stat-value" id="stat-total">—</span><span class="stat-label">Total Products</span></div>
+  <div class="stat"><span class="stat-value" id="stat-30">—</span><span class="stat-label">Added (30 days)</span></div>
+  <div class="stat"><span class="stat-value" id="stat-60">—</span><span class="stat-label">Added (60 days)</span></div>
+  <div class="stat"><span class="stat-value" id="stat-90">—</span><span class="stat-label">Added (90 days)</span></div>
+  <div class="stat"><span class="stat-value" id="stat-visit">—</span><span class="stat-label">Since Last Visit</span></div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- Filters -->
+  <div class="filter-card">
+    <div class="filter-row">
+      <div class="fg grow">
+        <label>Search</label>
+        <input type="search" id="q" placeholder="Company, product name, STN, MRTP…" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="fg">
+        <label>Category</label>
+        <select id="f-cat"><option value="">All Categories</option></select>
+      </div>
+      <div class="fg">
+        <label>Submission Type</label>
+        <select id="f-type"><option value="">All Types</option></select>
+      </div>
+      <div class="fg">
+        <label>Per page</label>
+        <select id="per-page">
+          <option value="50">50</option>
+          <option value="100">100</option>
+          <option value="250">250</option>
+        </select>
+      </div>
+      <button class="btn-reset" onclick="resetFilters()">Reset</button>
+    </div>
+  </div>
+
+  <!-- New-products quick filter -->
+  <div class="new-filter-card">
+    <span class="new-filter-label">🆕 Show:</span>
+    <div class="chip-group" id="chips">
+      <button class="chip active" data-val="all"   onclick="setNew('all',   this)">All Products</button>
+      <button class="chip"         data-val="30"    onclick="setNew('30',    this)">Last 30 Days</button>
+      <button class="chip"         data-val="60"    onclick="setNew('60',    this)">Last 60 Days</button>
+      <button class="chip"         data-val="90"    onclick="setNew('90',    this)">Last 90 Days</button>
+      <button class="chip"         data-val="visit" id="chip-visit" onclick="setNew('visit',this)" style="display:none">
+        Since Last Visit <span id="chip-visit-count"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div id="table-wrap">
+      <div class="state-msg"><div class="spinner"></div><p style="margin-top:14px">Loading FDA tobacco product data…</p></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════════════════════
+let ALL = [];          // all parsed products
+let FILTERED = [];     // after filters applied
+let page = 1;
+let sortCol = 5;       // Date of Action index
+let sortDir = 'desc';
+let newMode = 'all';
+let visitSTNs = new Set();  // STNs new since last visit
+
+const COLS = [
+  { key:'company',  label:'Company',     sort:true },
+  { key:'name',     label:'Product Name',sort:true },
+  { key:'category', label:'Category',    sort:true },
+  { key:'subcat',   label:'Sub-Cat',     sort:true },
+  { key:'subtype',  label:'Type',        sort:true },
+  { key:'date',     label:'Date',        sort:true },
+  { key:'stn',      label:'STN',         sort:true },
+  { key:'docs',     label:'Docs',        sort:false },
+];
+
+const TYPE_SHORT = {
+  'PMTA - Marketing Granted Order': 'PMTA',
+  'SE - Substantially Equivalent Order': 'SE Order',
+  'SE - Removed From Review': 'SE Removed',
+  'PTP Determination Req - Established Pre-Existing Tobacco Product': 'PTP',
+  'EXREQ - Found Exempt Order': 'EXREQ',
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CSV parser — handles quoted fields with embedded commas/quotes
+// ═══════════════════════════════════════════════════════════════════════════════
+function parseCSV(raw) {
+  const rows = [];
+  let row = [], field = '', inQ = false, i = 0;
+  while (i < raw.length) {
+    const c = raw[i], n = raw[i+1];
+    if (inQ) {
+      if (c === '"' && n === '"') { field += '"'; i += 2; }
+      else if (c === '"') { inQ = false; i++; }
+      else { field += c; i++; }
+    } else {
+      if (c === '"') { inQ = true; i++; }
+      else if (c === ',') { row.push(field); field = ''; i++; }
+      else if (c === '\r' && n === '\n') { row.push(field); field = ''; rows.push(row); row = []; i += 2; }
+      else if (c === '\n' || c === '\r') { row.push(field); field = ''; rows.push(row); row = []; i++; }
+      else { field += c; i++; }
+    }
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Parse date string MM/DD/YYYY → Date object
+// ═══════════════════════════════════════════════════════════════════════════════
+function pd(s) {
+  if (!s || s === 'N/A') return null;
+  const p = s.split('/');
+  if (p.length !== 3) return null;
+  const d = new Date(+p[2], +p[0]-1, +p[1]);
+  return isNaN(d) ? null : d;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Load + parse CSV
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadData() {
+  const res = await fetch('./data/tobacco.csv');
+  if (!res.ok) throw new Error(`HTTP ${res.status} — make sure the GitHub Action has run`);
+  const text = await res.text();
+  const rows = parseCSV(text);
+
+  // Find header row (first row where first cell is "Company")
+  let headerIdx = -1, meta = '';
+  for (let i = 0; i < Math.min(rows.length, 5); i++) {
+    const cell = (rows[i][0] || '').trim();
+    if (cell.toLowerCase() === 'company') { headerIdx = i; break; }
+    if (cell) meta = cell;
+  }
+
+  if (headerIdx < 0) throw new Error('Could not find CSV header row');
+
+  if (meta) {
+    document.getElementById('data-meta').textContent =
+      meta + ' · Source: FDA Searchable Tobacco Products Database';
+  }
+
+  const products = [];
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || r.length < 6 || !(r[0]||'').trim()) continue;
+    // Clean up encoding artifacts (e.g. non-breaking spaces, replacement chars)
+    const clean = s => (s||'').replace(/�/g,'').replace(/ /g,' ').trim();
+    products.push({
+      company:  clean(r[0]),
+      name:     clean(r[1]),
+      category: clean(r[2]),
+      subcat:   clean(r[3]),
+      subtype:  clean(r[4]),
+      date:     clean(r[5]),
+      dateObj:  pd(clean(r[5])),
+      orderLetter: clean(r[6]),
+      decisionSummary: clean(r[7]),
+      envAssess: clean(r[8]),
+      fonsi:    clean(r[9]),
+      stn:      clean(r[10]),
+      mrtp:     clean(r[11]),
+      addlInfo: clean(r[12]),
+      addlInfoLink: clean(r[13]),
+    });
+  }
+  return products;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Initialise
+// ═══════════════════════════════════════════════════════════════════════════════
+async function init() {
+  try {
+    ALL = await loadData();
+  } catch (e) {
+    document.getElementById('table-wrap').innerHTML = `
+      <div class="state-msg">
+        <div class="state-icon">⚠️</div>
+        <h3>Data not available</h3>
+        <p>Run the <strong>Update FDA Tobacco Data</strong> GitHub Action to populate <code>data/tobacco.csv</code>.<br>
+        Repository → Actions → Update FDA Tobacco Data → Run workflow<br><br>
+        <em style="font-size:12px;color:#94a3b8">${e.message}</em></p>
+      </div>`;
+    return;
+  }
+
+  if (!ALL.length) {
+    document.getElementById('table-wrap').innerHTML = `
+      <div class="state-msg">
+        <div class="state-icon">📭</div>
+        <h3>No products loaded</h3>
+        <p>The data file appears to be empty. Run the GitHub Action to fetch current FDA data.</p>
+      </div>`;
+    return;
+  }
+
+  // Populate dropdowns
+  const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
+  populate('f-cat',  uniq(ALL.map(p => p.category)));
+  populate('f-type', uniq(ALL.map(p => p.subtype)));
+
+  // Stats
+  const now = new Date();
+  const ago = n => new Date(now - n * 864e5);
+  const cnt = n => ALL.filter(p => p.dateObj && p.dateObj >= ago(n)).length;
+  set('stat-total', ALL.length.toLocaleString());
+  set('stat-30',    cnt(30).toLocaleString());
+  set('stat-60',    cnt(60).toLocaleString());
+  set('stat-90',    cnt(90).toLocaleString());
+
+  // Since-last-visit
+  const currentSTNs = new Set(ALL.map(p => p.stn).filter(Boolean));
+  const prev = localStorage.getItem('fda_stns_v1');
+  if (prev) {
+    try {
+      const prevSet = new Set(JSON.parse(prev));
+      visitSTNs = new Set([...currentSTNs].filter(s => !prevSet.has(s)));
+      const n = visitSTNs.size;
+      set('stat-visit', n.toLocaleString());
+      if (n > 0) {
+        set('visit-banner-text',
+          `🆕 ${n.toLocaleString()} new product${n > 1 ? 's' : ''} added since your last visit`);
+        document.getElementById('visit-banner').style.display = 'flex';
+        document.getElementById('chip-visit').style.display = '';
+        set('chip-visit-count', `(${n.toLocaleString()})`);
+      }
+    } catch(_) {}
+  } else {
+    set('stat-visit', '—');
+  }
+  localStorage.setItem('fda_stns_v1', JSON.stringify([...currentSTNs]));
+  localStorage.setItem('fda_last_visit', new Date().toISOString());
+
+  // Events
+  let t;
+  document.getElementById('q').addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { page=1; render(); }, 180); });
+  document.getElementById('f-cat').addEventListener('change',  () => { page=1; render(); });
+  document.getElementById('f-type').addEventListener('change', () => { page=1; render(); });
+  document.getElementById('per-page').addEventListener('change', () => { page=1; render(); });
+
+  render();
+}
+
+function populate(id, vals) {
+  const sel = document.getElementById(id);
+  vals.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = TYPE_SHORT[v] ? `${TYPE_SHORT[v]} — ${v}` : v;
+    sel.appendChild(o);
+  });
+}
+
+function set(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Filter + sort
+// ═══════════════════════════════════════════════════════════════════════════════
+function getFiltered() {
+  const q   = (document.getElementById('q').value || '').trim().toLowerCase();
+  const cat  = document.getElementById('f-cat').value;
+  const type = document.getElementById('f-type').value;
+  const now  = new Date();
+  const ago  = n => new Date(now - n * 864e5);
+
+  let r = ALL;
+
+  if (q) r = r.filter(p =>
+    p.company.toLowerCase().includes(q)  ||
+    p.name.toLowerCase().includes(q)     ||
+    p.stn.toLowerCase().includes(q)      ||
+    p.mrtp.toLowerCase().includes(q)     ||
+    p.addlInfo.toLowerCase().includes(q) ||
+    p.subtype.toLowerCase().includes(q)  ||
+    p.category.toLowerCase().includes(q)
+  );
+
+  if (cat)  r = r.filter(p => p.category === cat);
+  if (type) r = r.filter(p => p.subtype  === type);
+
+  if (newMode === '30')    r = r.filter(p => p.dateObj && p.dateObj >= ago(30));
+  else if (newMode === '60') r = r.filter(p => p.dateObj && p.dateObj >= ago(60));
+  else if (newMode === '90') r = r.filter(p => p.dateObj && p.dateObj >= ago(90));
+  else if (newMode === 'visit') r = r.filter(p => visitSTNs.has(p.stn));
+
+  // Sort
+  const col = COLS[sortCol].key;
+  r = [...r].sort((a, b) => {
+    let va, vb;
+    if (col === 'date') {
+      va = a.dateObj ? a.dateObj.getTime() : 0;
+      vb = b.dateObj ? b.dateObj.getTime() : 0;
+    } else {
+      va = (a[col] || '').toLowerCase();
+      vb = (b[col] || '').toLowerCase();
+    }
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+
+  return r;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Render
+// ═══════════════════════════════════════════════════════════════════════════════
+function render() {
+  FILTERED = getFiltered();
+  const pp = +document.getElementById('per-page').value;
+  const totalPg = Math.max(1, Math.ceil(FILTERED.length / pp));
+  if (page > totalPg) page = totalPg;
+  const s = (page-1)*pp;
+  const slice = FILTERED.slice(s, s+pp);
+  const now = new Date();
+  const ago90 = new Date(now - 90 * 864e5);
+
+  // Table head
+  const ths = COLS.map((c,i) => {
+    const cls = (sortCol === i) ? (sortDir === 'asc' ? 'sort-asc' : 'sort-desc') : '';
+    return `<th class="${cls}" onclick="sortBy(${i})">${c.label}</th>`;
+  }).join('');
+
+  // Rows
+  const trs = slice.map(p => {
+    const isVisit = visitSTNs.has(p.stn);
+    const isNew   = p.dateObj && p.dateObj >= ago90;
+    let rowCls = '', badge = '';
+
+    if (isVisit) {
+      rowCls = 'row-visit';
+      badge = `<span class="badge badge-visit">New Visit</span> `;
+    } else if (isNew) {
+      const daysAgo = Math.floor((now - p.dateObj) / 864e5);
+      rowCls = 'row-new';
+      badge = `<span class="badge badge-new">${daysAgo}d ago</span> `;
+    }
+
+    // Document links
+    const links = [];
+    if (p.orderLetter && p.orderLetter !== 'N/A')
+      links.push(`<a class="doc-link" href="${x(p.orderLetter)}" target="_blank">Order</a>`);
+    if (p.decisionSummary && p.decisionSummary !== 'N/A')
+      links.push(`<a class="doc-link" href="${x(p.decisionSummary)}" target="_blank">Decision</a>`);
+    if (p.envAssess && p.envAssess !== 'N/A')
+      links.push(`<a class="doc-link" href="${x(p.envAssess)}" target="_blank">EA</a>`);
+    if (p.fonsi && p.fonsi !== 'N/A')
+      links.push(`<a class="doc-link" href="${x(p.fonsi)}" target="_blank">FONSI</a>`);
+    if (p.addlInfoLink && p.addlInfoLink !== 'N/A')
+      links.push(`<a class="doc-link" href="${x(p.addlInfoLink)}" target="_blank">Info</a>`);
+
+    const typeShort = TYPE_SHORT[p.subtype] || p.subtype;
+
+    return `<tr class="${rowCls}">
+      <td class="td-company">${badge}${h(p.company)}</td>
+      <td class="td-name">${h(p.name)}</td>
+      <td class="td-nowrap"><span class="badge badge-cat">${h(p.category)}</span></td>
+      <td class="td-nowrap">${h(p.subcat)}</td>
+      <td class="td-nowrap"><span class="badge badge-type" title="${x(p.subtype)}">${h(typeShort)}</span></td>
+      <td class="td-nowrap">${h(p.date)}</td>
+      <td class="td-nowrap"><span class="stn">${h(p.stn)}</span>${p.mrtp ? ` <span class="stn" style="color:#a78bfa" title="MRTP: ${x(p.mrtp)}">/ ${h(p.mrtp)}</span>` : ''}</td>
+      <td><div class="doc-links">${links.join('')}</div></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" style="text-align:center;padding:40px;color:#94a3b8">No products match the current filters</td></tr>`;
+
+  const toolbar = `<div class="table-toolbar">
+    <span class="table-count">
+      Showing <strong>${FILTERED.length ? s+1 : 0}–${Math.min(s+pp, FILTERED.length)}</strong>
+      of <strong>${FILTERED.length.toLocaleString()}</strong> products
+      ${FILTERED.length < ALL.length ? `<span style="color:#94a3b8">(${ALL.length.toLocaleString()} total)</span>` : ''}
+    </span>
+    <button class="btn-export" onclick="exportCSV()">↓ Export CSV</button>
+  </div>`;
+
+  document.getElementById('table-wrap').innerHTML =
+    toolbar +
+    `<div class="table-scroll"><table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>` +
+    paginator(FILTERED.length, pp, totalPg);
+}
+
+function paginator(total, pp, totalPg) {
+  if (totalPg <= 1) return '';
+  const show = new Set([1, totalPg]);
+  for (let i = Math.max(1, page-2); i <= Math.min(totalPg, page+2); i++) show.add(i);
+  const sorted = [...show].sort((a,b)=>a-b);
+  let html = '', prev = null;
+  for (const n of sorted) {
+    if (prev !== null && n - prev > 1) html += `<span style="padding:0 4px;color:#94a3b8">…</span>`;
+    html += `<button class="pg-btn${n===page?' active':''}" onclick="goPage(${n})">${n}</button>`;
+    prev = n;
+  }
+  return `<div class="pagination">
+    <span class="pg-info">Page ${page} of ${totalPg}</span>
+    <div class="pg-btns">
+      <button class="pg-btn" onclick="goPage(${page-1})" ${page===1?'disabled':''}>‹</button>
+      ${html}
+      <button class="pg-btn" onclick="goPage(${page+1})" ${page===totalPg?'disabled':''}>›</button>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Actions
+// ═══════════════════════════════════════════════════════════════════════════════
+function sortBy(i) {
+  if (sortCol === i) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortCol = i; sortDir = i === 5 ? 'desc' : 'asc'; }
+  page = 1; render();
+}
+
+function goPage(n) {
+  const pp = +document.getElementById('per-page').value;
+  const tp = Math.ceil(FILTERED.length / pp);
+  page = Math.max(1, Math.min(n, tp));
+  render();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function setNew(val, btn) {
+  newMode = val;
+  document.querySelectorAll('#chips .chip').forEach(b => {
+    b.classList.remove('active', 'green', 'purple');
+  });
+  btn.classList.add('active');
+  if (val !== 'all' && val !== 'visit') btn.classList.add('green');
+  if (val === 'visit') btn.classList.add('purple');
+  page = 1; render();
+}
+
+function activateVisitFilter() {
+  const btn = document.getElementById('chip-visit');
+  setNew('visit', btn);
+  document.getElementById('visit-banner').style.display = 'none';
+}
+
+function resetFilters() {
+  document.getElementById('q').value = '';
+  document.getElementById('f-cat').value = '';
+  document.getElementById('f-type').value = '';
+  newMode = 'all';
+  document.querySelectorAll('#chips .chip').forEach(b => b.classList.remove('active','green','purple'));
+  document.querySelector('#chips .chip[data-val="all"]').classList.add('active');
+  page = 1; render();
+}
+
+function exportCSV() {
+  const head = ['Company','Product Name','Category','Sub-Category','Submission Type','Date of Action','STN','Associated MRTP','Additional Information'];
+  const body = FILTERED.map(p => [p.company,p.name,p.category,p.subcat,p.subtype,p.date,p.stn,p.mrtp,p.addlInfo]);
+  const csv  = [head,...body].map(r => r.map(v => `"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([csv], {type:'text/csv'})),
+    download: `fda-tobacco-${new Date().toISOString().slice(0,10)}.csv`,
+  });
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Escape helpers
+// ═══════════════════════════════════════════════════════════════════════════════
+function h(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function x(s) {
+  return (s||'').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Boot
+// ═══════════════════════════════════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>

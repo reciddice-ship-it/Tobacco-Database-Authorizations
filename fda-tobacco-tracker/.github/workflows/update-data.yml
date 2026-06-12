@@ -1,0 +1,43 @@
+name: Update FDA Tobacco Data
+
+on:
+  schedule:
+    - cron: '0 12 * * *'   # Every day at noon UTC
+  workflow_dispatch:        # Allow manual trigger from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch FDA tobacco product data
+        run: |
+          mkdir -p data
+          echo "Fetching from FDA…"
+          curl -fsSL \
+            --retry 3 --retry-delay 10 \
+            -H "User-Agent: Mozilla/5.0 (compatible; tobacco-directory-tracker/1.0)" \
+            "https://www.accessdata.fda.gov/scripts/searchtobacco/index.cfm?action=export.viewFile" \
+            -o data/tobacco.csv
+          echo "Done — $(wc -l < data/tobacco.csv) lines fetched"
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/tobacco.csv
+          if git diff --staged --quiet; then
+            echo "No changes — data is already up to date."
+          else
+            DATE=$(date -u +"%Y-%m-%d")
+            LINES=$(wc -l < data/tobacco.csv)
+            git commit -m "Update FDA tobacco data ${DATE} (${LINES} records)"
+            git push
+            echo "Committed and pushed updated data."
+          fi
