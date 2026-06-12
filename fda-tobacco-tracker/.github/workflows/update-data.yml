@@ -22,6 +22,8 @@ jobs:
           echo "Fetching from FDA…"
           curl -fsSL \
             --retry 3 --retry-delay 10 \
+            --max-time 60 \
+            --connect-timeout 15 \
             -H "User-Agent: Mozilla/5.0 (compatible; tobacco-directory-tracker/1.0)" \
             "https://www.accessdata.fda.gov/scripts/searchtobacco/index.cfm?action=export.viewFile" \
             -o data/tobacco.csv
